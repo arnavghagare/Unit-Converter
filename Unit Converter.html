@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Converter</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter font -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s;
+        }
+        /* Custom CSS for the pulse animation */
+        .animate-pulse-once {
+            animation: pulse-once 0.3s ease-in-out;
+        }
+        @keyframes pulse-once {
+            0% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.7); } /* Teal-500 equivalent */
+            50% { box-shadow: 0 0 0 10px rgba(20, 184, 166, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0); }
+        }
+    </style>
+    <!-- Tailwind Configuration for custom colors/theme -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'teal-600': '#047857',
+                        'teal-200': '#99f6e4',
+                        'gray-50': '#f9fafb',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-gray-100 p-4 sm:p-8 flex items-start justify-center">
+
+    <div class="w-full max-w-2xl bg-white shadow-xl rounded-3xl p-6 sm:p-10">
+        
+        <!-- HEADER -->
+        <header class="mb-8">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900">
+                Pro Unit Converter
+            </h1>
+            <p class="text-gray-600 mt-1">
+                Accurate, hardcoded mathematical conversions using JavaScript.
+            </p>
+        </header>
+
+        <!-- FAMILY SELECTOR (Pill Tabs) -->
+        <div id="family-selector" class="flex justify-between items-center mb-6 p-1 bg-gray-200 rounded-full shadow-inner">
+            <!-- Tabs will be rendered here by JavaScript -->
+        </div>
+        
+        <!-- CONVERSION INTERFACE -->
+        <div class="space-y-6">
+            
+            <!-- INPUT FIELD -->
+            <div class="relative">
+                <label for="input-value" id="input-label" class="block text-sm font-medium text-gray-600 mb-2">
+                    Input Value (Temperature)
+                </label>
+                <input
+                    id="input-value"
+                    type="number"
+                    step="any"
+                    placeholder="Enter value"
+                    value=""
+                    class="w-full bg-gray-50 text-gray-900 border border-gray-300 rounded-xl p-4 text-3xl font-bold focus:outline-none focus:ring-2 focus:ring-teal-500 transition duration-150 shadow-inner"
+                />
+            </div>
+
+            <!-- UNIT SELECTION AND SWAP -->
+            <div class="flex items-center space-x-4">
+                <div id="unit-from-container" class="flex-1">
+                    <!-- From Unit Selector will be rendered here -->
+                </div>
+                
+                <button
+                    id="swap-button"
+                    class="p-3 mt-6 rounded-full bg-white text-gray-500 border border-gray-300 hover:bg-teal-600 hover:text-white transition duration-300 transform hover:rotate-180 shadow-md"
+                    title="Swap Units"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-left-right w-5 h-5"><path d="M8 3 4 7l4 4"/><path d="M20 7H4"/><path d="M16 21l4-4-4-4"/><path d="M4 17h16"/></svg>
+                </button>
+                
+                <div id="unit-to-container" class="flex-1">
+                    <!-- To Unit Selector will be rendered here -->
+                </div>
+            </div>
+
+            <!-- RESULT DISPLAY -->
+            <div 
+                id="result-display"
+                class="p-6 bg-teal-600 rounded-2xl shadow-xl transition-opacity duration-300 ease-out opacity-50 translate-y-2"
+            >
+                <div class="flex items-center space-x-3 mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-white"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+                    <p class="text-lg font-medium text-teal-200">Result</p>
+                </div>
+                
+                <p id="result-value" class="text-3xl font-light text-teal-200">
+                    Enter a value above...
+                </p>
+                <p id="result-unit" class="text-xl font-semibold text-teal-200 mt-1 hidden"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Icons in SVG format for vanilla JS
+        const icons = {
+            Thermometer: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-thermometer w-5 h-5 mr-2"><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/></svg>',
+            Ruler: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ruler w-5 h-5 mr-2"><path d="M2 7V5h19v2M2 12h19M2 17h19v-2"/></svg>',
+            Weight: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-weight w-5 h-5 mr-2"><circle cx="12" cy="5" r="3"/><path d="M6.23 20a10.07 10.07 0 0 1-4-10"/><path d="M17.77 20a10.07 10.07 0 0 0 4-10"/><path d="M16 14h-8l-2 6h12z"/></svg>'
+        };
+
+        // --- Hardcoded Unit Definitions ---
+        const unitFamilies = [
+            { 
+                id: 'temperature', 
+                name: 'Temperature', 
+                iconKey: 'Thermometer',
+                color: 'text-red-600', 
+                units: ['Celsius', 'Fahrenheit', 'Kelvin'],
+            },
+            { 
+                id: 'distance', 
+                name: 'Distance', 
+                iconKey: 'Ruler',
+                color: 'text-indigo-600',
+                // CHANGED: Replaced 'Miles' with 'Meters'
+                units: ['Kilometers', 'Meters', 'Feet'],
+            },
+            { 
+                id: 'weight', 
+                name: 'Weight', 
+                iconKey: 'Weight', 
+                color: 'text-green-600', 
+                units: ['Kilograms', 'Pounds', 'Grams'],
+            },
+        ];
+
+        // --- State Management (using simple JS variables) ---
+        let activeFamily = unitFamilies[0];
+        let fromUnit = activeFamily.units[0];
+        let toUnit = activeFamily.units[1] || activeFamily.units[0];
+        let inputValue = '';
+
+        // --- DOM Elements ---
+        const familySelectorEl = document.getElementById('family-selector');
+        const inputLabelEl = document.getElementById('input-label');
+        const inputValueEl = document.getElementById('input-value');
+        const unitFromContainerEl = document.getElementById('unit-from-container');
+        const unitToContainerEl = document.getElementById('unit-to-container');
+        const swapButtonEl = document.getElementById('swap-button');
+        const resultDisplayEl = document.getElementById('result-display');
+        const resultValueEl = document.getElementById('result-value');
+        const resultUnitEl = document.getElementById('result-unit');
+
+
+        /**
+         * Core conversion logic (same as React version)
+         */
+        const convertValue = (familyId, value, from, to) => {
+            if (from === to || isNaN(value)) return value;
+
+            let baseValue; 
+
+            // 1. Convert FROM unit TO Base Unit (Celsius, Kilograms, Kilometers)
+            switch (familyId) {
+                case 'temperature':
+                    if (from === 'Fahrenheit') baseValue = (value - 32) * 5/9;
+                    else if (from === 'Kelvin') baseValue = value - 273.15;
+                    else baseValue = value; 
+                    break;
+                case 'distance':
+                    // CHANGED: Conversion for Meters to Kilometers
+                    if (from === 'Meters') baseValue = value / 1000;
+                    else if (from === 'Feet') baseValue = value / 3280.84; // 1 km = 3280.84 ft
+                    else baseValue = value; // Already in Kilometers 
+                    break;
+                case 'weight':
+                    if (from === 'Pounds') baseValue = value / 2.20462;
+                    else if (from === 'Grams') baseValue = value / 1000;
+                    else baseValue = value; 
+                    break;
+                default:
+                    return 0;
+            }
+
+            // 2. Convert Base Unit TO Target Unit
+            switch (familyId) {
+                case 'temperature':
+                    if (to === 'Fahrenheit') return (baseValue * 9/5) + 32;
+                    else if (to === 'Kelvin') return baseValue + 273.15;
+                    else return baseValue; 
+                    
+                case 'distance':
+                    // CHANGED: Conversion from Kilometers to Meters
+                    if (to === 'Meters') return baseValue * 1000;
+                    else if (to === 'Feet') return baseValue * 3280.84;
+                    else return baseValue; // To Kilometers 
+                    
+                case 'weight':
+                    if (to === 'Pounds') return baseValue * 2.20462;
+                    else if (to === 'Grams') return baseValue * 1000;
+                    else return baseValue; 
+                default:
+                    return 0;
+            }
+        };
+
+        /**
+         * Renders the HTML for a single Unit Selector (From or To).
+         */
+        const renderUnitSelector = (label, currentUnit, containerEl, units, stateKey) => {
+            containerEl.innerHTML = `
+                <label class="block text-sm font-medium text-gray-600 mb-1">${label}</label>
+                <div class="relative">
+                    <select
+                        id="select-${stateKey}"
+                        data-state-key="${stateKey}"
+                        class="appearance-none block w-full bg-white text-gray-900 border border-gray-300 rounded-xl py-3 px-4 pr-10 text-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition duration-150 cursor-pointer"
+                    >
+                        ${units.map(unit => 
+                            `<option value="${unit}" ${unit === currentUnit ? 'selected' : ''}>${unit}</option>`
+                        ).join('')}
+                    </select>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"><path d="m6 9 6 6 6-6"/></svg>
+                </div>
+            `;
+        };
+        
+        /**
+         * Updates the result display with the calculated value.
+         */
+        const updateResultDisplay = (result) => {
+            const hasResult = result !== null;
+            
+            // Set animation classes
+            resultDisplayEl.classList.remove('animate-pulse-once', 'opacity-100', 'translate-y-0');
+            resultDisplayEl.classList.add('opacity-50', 'translate-y-2');
+
+            // Apply result/placeholder content
+            if (hasResult) {
+                const formattedResult = parseFloat(result.toFixed(6));
+                resultValueEl.innerHTML = formattedResult.toString();
+                resultValueEl.classList.remove('text-3xl', 'font-light');
+                resultValueEl.classList.add('text-5xl', 'font-extrabold');
+
+                resultUnitEl.textContent = toUnit;
+                resultUnitEl.classList.remove('hidden');
+
+                // Animate result display
+                setTimeout(() => {
+                    resultDisplayEl.classList.add('animate-pulse-once', 'opacity-100', 'translate-y-0');
+                    resultDisplayEl.classList.remove('opacity-50', 'translate-y-2');
+                }, 10); // Short delay to re-trigger transition/animation
+            } else {
+                resultValueEl.textContent = 'Enter a value above...';
+                resultValueEl.classList.add('text-3xl', 'font-light');
+                resultValueEl.classList.remove('text-5xl', 'font-extrabold');
+                resultUnitEl.classList.add('hidden');
+            }
+        };
+
+        /**
+         * Main conversion and UI update handler.
+         */
+        const handleConversion = () => {
+            inputValue = inputValueEl.value;
+            
+            // Update the unit state variables from the current selectors
+            fromUnit = document.getElementById('select-fromUnit')?.value || activeFamily.units[0];
+            toUnit = document.getElementById('select-toUnit')?.value || activeFamily.units[1];
+            
+            const value = parseFloat(inputValue);
+
+            if (isNaN(value) || inputValue === '') {
+                updateResultDisplay(null);
+                return;
+            }
+
+            const result = convertValue(activeFamily.id, value, fromUnit, toUnit);
+            updateResultDisplay(result);
+        };
+
+        /**
+         * Renders the unit selectors and attaches listeners for the active family.
+         */
+        const renderUnitControls = () => {
+            // Render FROM selector
+            renderUnitSelector('Convert From', fromUnit, unitFromContainerEl, activeFamily.units, 'fromUnit');
+            
+            // Render TO selector
+            renderUnitSelector('Convert To', toUnit, unitToContainerEl, activeFamily.units, 'toUnit');
+
+            // Update input label
+            inputLabelEl.textContent = `Input Value (${activeFamily.name})`;
+            
+            // Attach event listeners for unit changes
+            document.getElementById('select-fromUnit').addEventListener('change', handleConversion);
+            document.getElementById('select-toUnit').addEventListener('change', handleConversion);
+
+            // Initial conversion after rendering controls
+            handleConversion();
+        };
+
+        /**
+         * Switches the active family and resets units.
+         */
+        const setActiveFamilyHandler = (family) => {
+            activeFamily = family;
+            fromUnit = family.units[0];
+            toUnit = family.units[1] || family.units[0];
+            inputValueEl.value = '';
+            renderFamilyTabs();
+            renderUnitControls();
+        };
+
+        /**
+         * Renders all the family selection tabs.
+         */
+        const renderFamilyTabs = () => {
+            familySelectorEl.innerHTML = unitFamilies.map(family => {
+                const isActive = activeFamily.id === family.id;
+                const activeClasses = `bg-teal-600 text-white shadow-lg ${family.color.replace('-600', '-200')}`;
+                const inactiveClasses = 'text-gray-700 hover:bg-gray-300';
+                
+                // Note: The icon is directly embedded as HTML string
+                const iconHtml = icons[family.iconKey];
+
+                return `
+                    <button
+                        data-family-id="${family.id}"
+                        class="flex-1 py-3 px-2 mx-1 rounded-full text-center text-sm font-semibold transition-all duration-300 ease-in-out ${isActive ? activeClasses : inactiveClasses} flex items-center justify-center"
+                    >
+                        ${iconHtml.replace('mr-2', isActive ? 'mr-2 text-white' : 'mr-2')}
+                        ${family.name}
+                    </button>
+                `;
+            }).join('');
+
+            // Attach listeners to the new buttons
+            familySelectorEl.querySelectorAll('button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const familyId = e.currentTarget.dataset.familyId;
+                    const family = unitFamilies.find(f => f.id === familyId);
+                    if (family) setActiveFamilyHandler(family);
+                });
+            });
+        };
+
+        /**
+         * Swaps the 'From' and 'To' units.
+         */
+        const handleSwap = () => {
+            const tempUnit = fromUnit;
+            fromUnit = toUnit;
+            toUnit = tempUnit;
+            
+            // Carry the current result into the new input field
+            const currentResult = document.getElementById('result-value').textContent;
+            if (currentResult && currentResult !== 'Enter a value above...') {
+                inputValueEl.value = currentResult;
+            } else {
+                 inputValueEl.value = '';
+            }
+
+            // Rerender controls and trigger conversion
+            renderUnitControls();
+            handleConversion();
+        };
+
+        // --- Initialization on Load ---
+        window.onload = () => {
+            renderFamilyTabs();
+            renderUnitControls();
+
+            // Attach main listeners
+            inputValueEl.addEventListener('input', handleConversion);
+            swapButtonEl.addEventListener('click', handleSwap);
+        };
+    </script>
+</body>
+</html>
